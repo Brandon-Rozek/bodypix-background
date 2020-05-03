@@ -27,9 +27,9 @@ Next we need to setup the `v4l2loopback` kernel module for the fake webcam.
 
 To install,
 
-``bash
+```bash
  sudo apt-get install v4l2loopback-dkms
- ```
+```
 
 If you already had an existing module, remove it so we can customize it,
 ```bash
