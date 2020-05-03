@@ -25,6 +25,7 @@ async function run() {
 		const image = decodeJpeg(msg)
 		const segmentation = await net.segmentPerson(image);
 		await sock.send(segmentation.data);
+		tf.dispose(image)
 	}
 }
 

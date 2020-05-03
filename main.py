@@ -1,42 +1,78 @@
 import zmq
 import cv2
+from pyfakewebcam import FakeWebcam
 import numpy as np
+from camera import Camera
+from signal import signal, SIGINT
 
-ctx = zmq.Context() 
-sock = ctx.socket(zmq.REQ)
-sock.connect('ipc:///tmp/bodypix')
-cap = cv2.VideoCapture(0)
-while True:
-    _, frame = cap.read()
-    _, image = cv2.imencode('.jpg', frame)
+def process_mask(m, shape):
+    w, h = shape
+    m = np.frombuffer(m, dtype=np.uint8).reshape((w, h, -1))
+    m = m[:, :, 0].astype(np.float32)
+    m = cv2.blur(cv2.UMat(m), (30, 30))
+    return m.get()
 
-    print("LENGTH", len(image.tostring()), flush=True)
-    sock.send(image.tostring())
-    convereted_img = sock.recv()
+def composite(foreground, backdrop, fore_mask):
+    inv_mask = 1 - fore_mask
+    for c in range(foreground.shape[2]):
+        foreground[:, :, c] = foreground[:, :, c] * fore_mask + backdrop[:, :, c] * inv_mask
+    return foreground
 
-    mask = np.frombuffer(convereted_img, dtype=np.uint8)
-    mask = mask.reshape((frame.shape[0], frame.shape[1], 4))
-    mask = mask[:, :, 0]
 
-    # post-process mask and frame
-    mask = cv2.UMat(mask)
-    mask = cv2.dilate(mask, np.ones((10, 10), np.uint8), iterations=1)
-    mask = cv2.blur(cv2.UMat(mask.get().astype(np.float32)), (30, 30))
+def get_background(uri=None):
+    """
+        Either grabs the image specified or
+        blurs the current background.
+    """
+    initial_frame = camera.read()
+    w, h = initial_frame.shape[0], initial_frame.shape[1]
+    backdrop = None
+    if uri is not None:
+        backdrop = cv2.resize(
+            cv2.UMat(cv2.imread('/home/rozek/Pictures/IMG_20191013_181848.jpg')),
+            (h, w)
+        ).get().astype(np.uint8)
+    else:
+        backdrop = cv2.GaussianBlur(initial_frame, (221, 221), sigmaX=20, sigmaY=20).astype(np.uint8)
+    return backdrop, (w, h)
 
-    frame = cv2.UMat(frame)
-    background = cv2.GaussianBlur(frame, (221, 221), sigmaX=20, sigmaY=20)
 
-    # composite the foreground and background
-    frame = frame.get().astype(np.uint8)
-    mask = mask.get().astype(np.float32)
-    background = background.get().astype(np.uint8)
-    inv_mask = 1 - mask
-    for c in range(frame.shape[2]):
-        frame[:, :, c] = frame[:, :, c] * mask + background[:, :, c] * inv_mask
+def stop(signal_received, stack_frame):
+    """Gracefully stops the application."""
+    global running
+    running = False
+    print("Stopping...")
 
-    cv2.imshow('frame', frame)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-  
-cap.release()
-cv2.destroyAllWindows()
+
+# Start Camera
+camera = Camera()
+camera.start()
+
+if __name__ == "__main__":
+    signal(SIGINT, stop)
+
+    # Setup ZeroMQ
+    ctx = zmq.Context() 
+    sock = ctx.socket(zmq.REQ)
+    sock.connect('ipc:///tmp/bodypix')
+
+    background, (width, height) = get_background()
+    fake = FakeWebcam('/dev/video20', height, width)
+
+    running = True
+    print("Running...")
+    
+    while running:
+        frame = camera.read()
+        _, image = cv2.imencode('.jpg', frame)
+        frame = frame.astype(np.uint8)
+
+        # Process image to find body masks
+        sock.send(image.tostring())
+        mask = process_mask(sock.recv(), (width, height))
+
+        frame = composite(frame, background, mask)
+
+        # Send to the fake camera device
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        fake.schedule_frame(frame)
