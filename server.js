@@ -21,7 +21,6 @@ async function run() {
 	console.log("Bounded to ipc:///tmp/bodypix");
 
 	for await (const [msg] of sock) {
-		console.log("Received RAW Message");
 		const image = decodeJpeg(msg)
 		const segmentation = await net.segmentPerson(image);
 		await sock.send(segmentation.data);

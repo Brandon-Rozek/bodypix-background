@@ -2,7 +2,7 @@ import zmq
 import cv2
 from pyfakewebcam import FakeWebcam
 import numpy as np
-from camera import Camera
+from .camera import Camera
 from argparse import ArgumentParser
 from signal import signal, SIGINT
 
@@ -69,7 +69,7 @@ if __name__ == "__main__":
     fake = FakeWebcam('/dev/video20', height, width)
 
     running = True
-    print("Running...")
+    print("Running camera at /dev/video20 ...")
     
     while running:
         frame = camera.read()
