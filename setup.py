@@ -7,6 +7,7 @@ setup(name="bodypix-background",
       install_requires=[
           "opencv-python~=4.2.0.34",
           "numpy~=1.18.3",
-          "pyzmq~=19.0.0"
+          "pyzmq~=19.0.0",
+          "pyfakewebcam==0.1.0"
       ]
 )

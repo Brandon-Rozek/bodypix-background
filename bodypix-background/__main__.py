@@ -3,6 +3,7 @@ import cv2
 from pyfakewebcam import FakeWebcam
 import numpy as np
 from camera import Camera
+from argparse import ArgumentParser
 from signal import signal, SIGINT
 
 def process_mask(m, shape):
@@ -29,7 +30,7 @@ def get_background(uri=None):
     backdrop = None
     if uri is not None:
         backdrop = cv2.resize(
-            cv2.UMat(cv2.imread('/home/rozek/Pictures/IMG_20191013_181848.jpg')),
+            cv2.UMat(cv2.imread(uri)),
             (h, w)
         ).get().astype(np.uint8)
     else:
@@ -42,6 +43,14 @@ def stop(signal_received, stack_frame):
     global running
     running = False
     print("Stopping...")
+
+parser = ArgumentParser(description="Virtual Backgrounds with Bodypix")
+parser.add_argument(
+    "--background",
+    type=str,
+    help="The background to use. If not specified, will be a blur of the initial frame."
+)
+args = vars(parser.parse_args())
 
 
 # Start Camera
@@ -56,7 +65,7 @@ if __name__ == "__main__":
     sock = ctx.socket(zmq.REQ)
     sock.connect('ipc:///tmp/bodypix')
 
-    background, (width, height) = get_background()
+    background, (width, height) = get_background(args['background'])
     fake = FakeWebcam('/dev/video20', height, width)
 
     running = True
