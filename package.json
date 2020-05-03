@@ -1,0 +1,19 @@
+{
+  "name": "zbody",
+  "version": "1.0.0",
+  "description": "ZeroMQ Bodypix 2.0 Server",
+  "main": "server.js",
+  "dependencies": {
+    "@tensorflow-models/body-pix": "^2.0.5",
+    "@tensorflow/tfjs-node": "^1.7.4",
+    "canvas": "^2.6.1",
+    "jpeg-js": "^0.4.0",
+    "zeromq": "^6.0.0-beta.6"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
