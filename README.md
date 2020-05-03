@@ -9,7 +9,7 @@ This is made in part by the hard work of many people:
 
 Daniel Llewellyn has the highest polish solution so far, making it easily installable under Linux as a snap package.
 
-This solution aims for loewr latency through the following ways
+This solution aims for lower latency through the following ways
 - Uses ZeroMQ IPC for communication between the TFJS model and the image processing
 - Less transformations
 - If blurred background is chosen, only the first frame is captured and blurred
