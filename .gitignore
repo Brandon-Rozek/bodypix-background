@@ -3,3 +3,4 @@ package-lock.json
 .mypy_cache/
 .vscode/
 *.egg-info
+*__pycache__*
