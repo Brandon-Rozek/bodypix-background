@@ -3,18 +3,13 @@ const tf = require('@tensorflow/tfjs-node');
 const bodyPix = require('@tensorflow-models/body-pix');
 const {decodeJpeg} = require('./decode_image');
 
-let net = null;
-
-async function load() {
-	net = await bodyPix.load({
+async function main() {
+	const net = await bodyPix.load({
 		architecture: 'MobileNetV1',
 		outputStride: 16,
 		multiplier: 0.5,
 		quantBytes: 2
 	});
-}
-
-async function run() {
 	const sock = new zmq.Reply;
 
 	await sock.bind('ipc:///tmp/bodypix');
@@ -28,5 +23,4 @@ async function run() {
 	}
 }
 
-load();
-run();
+main();
